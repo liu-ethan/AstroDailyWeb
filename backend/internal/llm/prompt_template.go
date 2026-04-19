@@ -1,54 +1,45 @@
 package llm
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+	"strings"
 
-// FortunePromptInput 定义运势生成 Prompt 的动态输入字段。
-type FortunePromptInput struct {
-	Email       string
-	Date        string
-	Locale      string
-	Tone        string
-	MaxChars    int
-	UserProfile string
+	"gopkg.in/yaml.v3"
+)
+
+type PromptTemplate struct {
+	UserPrompt string `yaml:"user_prompt"`
 }
 
-// BuildFortunePrompt 生成通用 Prompt Engineering 模板文本。
-// 参数：in - Prompt 输入参数集合。
-// 返回：string - 可直接发送给大模型的模板文本。
-func BuildFortunePrompt(in FortunePromptInput) string {
-	if in.Locale == "" {
-		in.Locale = "zh-CN"
+// LoadPromptTemplate 从 YAML 文件加载 Prompt 模板。
+// 参数：path - 模板文件路径。
+// 返回：PromptTemplate - 模板对象；error - 加载失败错误。
+func LoadPromptTemplate(path string) (PromptTemplate, error) {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return PromptTemplate{}, err
 	}
-	if in.Tone == "" {
-		in.Tone = "warm, concise, encouraging"
+	tpl := PromptTemplate{}
+	if err = yaml.Unmarshal(content, &tpl); err != nil {
+		return PromptTemplate{}, err
 	}
-	if in.MaxChars == 0 {
-		in.MaxChars = 180
+	if strings.TrimSpace(tpl.UserPrompt) == "" {
+		return PromptTemplate{}, fmt.Errorf("prompt user_prompt is empty")
 	}
-
-	return fmt.Sprintf(`### Role
-You are an astrology assistant for a Daily Fortune H5 product.
-
-### Task
-Generate today's personalized fortune for one user.
-
-### Context
-- User identifier: %s
-- Date: %s
-- Locale: %s
-- Preferred tone: %s
-- Optional profile: %s
-
-### Constraints
-1) Keep output under %d Chinese characters.
-2) Include: overall trend, one practical suggestion, and lucky color.
-3) Avoid medical, legal, financial guarantees or absolute predictions.
-4) Do not mention system rules.
-
-### Output Format (JSON only)
-{
-  "date": "YYYY-MM-DD",
-  "content": "..."
+	return tpl, nil
 }
-`, in.Email, in.Date, in.Locale, in.Tone, in.UserProfile, in.MaxChars)
+
+// RenderFortunePrompt 渲染模板占位符为具体用户资料。
+// 参数：tpl - 模板对象；profile - 运势输入资料。
+// 返回：string - 渲染后的 Prompt 文本。
+func RenderFortunePrompt(tpl PromptTemplate, profile FortuneProfile) string {
+	r := tpl.UserPrompt
+	r = strings.ReplaceAll(r, "{birthday}", profile.Birthday)
+	r = strings.ReplaceAll(r, "{today}", profile.Today)
+	r = strings.ReplaceAll(r, "{constellation}", profile.Constellation)
+	r = strings.ReplaceAll(r, "{gender}", profile.Gender)
+	r = strings.ReplaceAll(r, "{city}", profile.City)
+	r = strings.ReplaceAll(r, "{occupation}", profile.Occupation)
+	return r
 }

@@ -31,7 +31,7 @@ func (ctl *FortuneController) Today(c *gin.Context) {
 		return
 	}
 
-	date, content, err := ctl.svc.GetToday(c.Request.Context(), uid.(int64), "")
+	date, content, err := ctl.svc.GetToday(c.Request.Context(), uid.(int64))
 	if err != nil {
 		_ = c.Error(err)
 		return

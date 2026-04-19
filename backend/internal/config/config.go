@@ -9,11 +9,12 @@ import (
 )
 
 type Config struct {
-	App  AppConfig  `yaml:"app"`
-	DB   DBConfig   `yaml:"db"`
-	JWT  JWTConfig  `yaml:"jwt"`
-	SMTP SMTPConfig `yaml:"smtp"`
-	LLM  LLMConfig  `yaml:"llm"`
+	App   AppConfig   `yaml:"app"`
+	DB    DBConfig    `yaml:"db"`
+	Redis RedisConfig `yaml:"redis"`
+	JWT   JWTConfig   `yaml:"jwt"`
+	SMTP  SMTPConfig  `yaml:"smtp"`
+	LLM   LLMConfig   `yaml:"llm"`
 }
 
 type AppConfig struct {
@@ -61,6 +62,13 @@ type LLMConfig struct {
 	Timeout  time.Duration `yaml:"timeout"`
 }
 
+type RedisConfig struct {
+	Addr      string `yaml:"addr"`
+	Password  string `yaml:"password"`
+	DB        int    `yaml:"db"`
+	KeyPrefix string `yaml:"key_prefix"`
+}
+
 // Load 从指定 YAML 文件加载配置并校验关键字段。
 // 参数：path - 配置文件路径。
 // 返回：Config - 配置对象；error - 加载或校验失败时返回错误。
@@ -75,6 +83,9 @@ func Load(path string) (Config, error) {
 		return Config{}, fmt.Errorf("parse config yaml failed: %w", err)
 	}
 
+	if cfg.Redis.Addr == "" {
+		return Config{}, fmt.Errorf("redis.addr is required")
+	}
 	if cfg.JWT.Secret == "" {
 		return Config{}, fmt.Errorf("jwt.secret is required")
 	}

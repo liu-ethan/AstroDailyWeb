@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 
 	"astrodailyweb/backend/internal/auth"
 	"astrodailyweb/backend/internal/config"
@@ -26,6 +27,7 @@ type App struct {
 	Logger    *slog.Logger
 	Engine    *gin.Engine
 	DB        *sql.DB
+	Redis     *redis.Client
 	Scheduler *scheduler.Scheduler
 }
 
@@ -37,8 +39,14 @@ func Build(cfg config.Config, log *slog.Logger) (*App, error) {
 	if err != nil {
 		return nil, fmt.Errorf("init db failed: %w", err)
 	}
+	redisClient, err := db.NewRedis(cfg.Redis)
+	if err != nil {
+		_ = database.Close()
+		return nil, fmt.Errorf("init redis failed: %w", err)
+	}
 
 	jwtMgr := auth.NewJWTManager(cfg.JWT.Secret, cfg.JWT.Issuer, time.Duration(cfg.JWT.ExpireMinutes)*time.Minute)
+	tokenStore := auth.NewRedisTokenStore(redisClient, cfg.Redis.KeyPrefix)
 	smtp := notify.NewClient(cfg.SMTP.Host, cfg.SMTP.Port, cfg.SMTP.User, cfg.SMTP.Pass, cfg.SMTP.From)
 
 	var llmClient llm.Client = &llm.StubClient{}
@@ -50,8 +58,8 @@ func Build(cfg config.Config, log *slog.Logger) (*App, error) {
 	fortuneMapper := repository.NewFortuneMapper(database)
 	userMapper := repository.NewUserMapper(database)
 
-	authSvc := service.NewAuthService(authMapper, smtp, jwtMgr)
-	fortuneSvc := service.NewFortuneService(fortuneMapper, llmClient)
+	authSvc := service.NewAuthService(authMapper, smtp, jwtMgr, tokenStore)
+	fortuneSvc := service.NewFortuneService(fortuneMapper, userMapper, llmClient)
 	userSvc := service.NewUserService(userMapper)
 
 	ctrls := router.Controllers{
@@ -67,12 +75,12 @@ func Build(cfg config.Config, log *slog.Logger) (*App, error) {
 		middleware.ErrorHandler(),
 	}
 
-	engine := router.NewEngine(mws, ctrls, middleware.JWTAuth(jwtMgr))
+	engine := router.NewEngine(mws, ctrls, middleware.JWTAuth(jwtMgr, tokenStore))
 
 	s := scheduler.New(log, userSvc, fortuneSvc)
 	if err = s.RegisterJobs(); err != nil {
 		return nil, fmt.Errorf("register cron jobs failed: %w", err)
 	}
 
-	return &App{Config: cfg, Logger: log, Engine: engine, DB: database, Scheduler: s}, nil
+	return &App{Config: cfg, Logger: log, Engine: engine, DB: database, Redis: redisClient, Scheduler: s}, nil
 }

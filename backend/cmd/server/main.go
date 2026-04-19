@@ -34,6 +34,11 @@ func main() {
 		panic(fmt.Errorf("build app failed: %w", err))
 	}
 	defer func() { _ = application.DB.Close() }()
+	defer func() {
+		if application.Redis != nil {
+			_ = application.Redis.Close()
+		}
+	}()
 
 	if cfg.App.EnableCron {
 		application.Scheduler.Start()
