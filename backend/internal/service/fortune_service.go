@@ -4,11 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
 	"astrodailyweb/backend/internal/apperror"
 	"astrodailyweb/backend/internal/llm"
+	"astrodailyweb/backend/internal/notify"
 	"astrodailyweb/backend/internal/repository"
 )
 
@@ -22,13 +24,14 @@ type fortuneService struct {
 	mapper     repository.FortuneMapper
 	userMapper repository.UserMapper
 	llm        llm.Client
+	smtp       notify.SMTPClient
 }
 
 // NewFortuneService 创建运势服务。
-// 参数：mapper - 运势数据访问层；userMapper - 用户数据访问层；llmClient - 大模型客户端。
+// 参数：mapper - 运势数据访问层；userMapper - 用户数据访问层；llmClient - 大模型客户端；smtp - 邮件发送客户端。
 // 返回：FortuneService - 运势服务接口实现。
-func NewFortuneService(mapper repository.FortuneMapper, userMapper repository.UserMapper, llmClient llm.Client) FortuneService {
-	return &fortuneService{mapper: mapper, userMapper: userMapper, llm: llmClient}
+func NewFortuneService(mapper repository.FortuneMapper, userMapper repository.UserMapper, llmClient llm.Client, smtp notify.SMTPClient) FortuneService {
+	return &fortuneService{mapper: mapper, userMapper: userMapper, llm: llmClient, smtp: smtp}
 }
 
 // GetToday 获取或生成用户今日运势。
@@ -91,12 +94,24 @@ func validateProfile(p repository.UserProfile) []string {
 	return missing
 }
 
-// GenerateForSubscribedUsers 为订阅用户批量生成运势（当前为占位实现）。
+// GenerateForSubscribedUsers 为订阅用户批量生成运势并发送邮件。
 // 参数：ctx - 上下文；users - 订阅用户列表。
 // 返回：error - 处理失败错误。
 func (s *fortuneService) GenerateForSubscribedUsers(ctx context.Context, users []repository.UserRecord) error {
-	_ = ctx
-	_ = users
+	var failed []string
+	for _, user := range users {
+		date, content, err := s.GetToday(ctx, user.ID)
+		if err != nil {
+			failed = append(failed, fmt.Sprintf("user_id=%d: %v", user.ID, err))
+			continue
+		}
+		if err = s.smtp.Send(ctx, []string{user.Email}, "每日运势", fmt.Sprintf("%s\n\n%s", date, content)); err != nil {
+			failed = append(failed, fmt.Sprintf("user_id=%d: %v", user.ID, err))
+		}
+	}
+	if len(failed) > 0 {
+		return fmt.Errorf("generate/send fortune failed: %s", strings.Join(failed, "; "))
+	}
 	return nil
 }
 

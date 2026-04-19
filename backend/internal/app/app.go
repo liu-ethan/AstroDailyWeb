@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -50,7 +51,8 @@ func Build(cfg config.Config, log *slog.Logger) (*App, error) {
 	smtp := notify.NewClient(cfg.SMTP.Host, cfg.SMTP.Port, cfg.SMTP.User, cfg.SMTP.Pass, cfg.SMTP.From)
 
 	var llmClient llm.Client = &llm.StubClient{}
-	if cfg.LLM.Provider == "openai-compatible" {
+	provider := strings.TrimSpace(cfg.LLM.Provider)
+	if provider == "openai-compatible" || (provider == "" && cfg.LLM.APIKey != "" && cfg.LLM.BaseURL != "") {
 		llmClient = llm.NewOpenAICompatibleClient(cfg.LLM.APIKey, cfg.LLM.BaseURL, cfg.LLM.Model, cfg.LLM.Timeout)
 	}
 
@@ -59,7 +61,7 @@ func Build(cfg config.Config, log *slog.Logger) (*App, error) {
 	userMapper := repository.NewUserMapper(database)
 
 	authSvc := service.NewAuthService(authMapper, smtp, jwtMgr, tokenStore)
-	fortuneSvc := service.NewFortuneService(fortuneMapper, userMapper, llmClient)
+	fortuneSvc := service.NewFortuneService(fortuneMapper, userMapper, llmClient, smtp)
 	userSvc := service.NewUserService(userMapper)
 
 	ctrls := router.Controllers{
