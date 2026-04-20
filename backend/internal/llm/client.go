@@ -86,7 +86,11 @@ func (c *OpenAICompatibleClient) GenerateTodayFortune(ctx context.Context, profi
 	}
 	buf, _ := json.Marshal(payload)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL, bytes.NewReader(buf))
+	endpoint := strings.TrimRight(c.baseURL, "/")
+	if !strings.HasSuffix(endpoint, "/chat/completions") {
+		endpoint = endpoint + "/chat/completions"
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(buf))
 	if err != nil {
 		return "", err
 	}
