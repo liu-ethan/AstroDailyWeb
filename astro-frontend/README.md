@@ -1,6 +1,28 @@
 # astro-frontend
 
-This template should help get you started developing with Vue 3 in Vite.
+H5 前端（Vue 3 + Vite），包含注册、登录、重置密码、个人资料、今日运势与订阅服务页面。
+
+## 项目启动
+
+```sh
+npm install
+npm run dev
+```
+
+## 环境变量
+
+默认使用 Vite dev 代理访问后端（`/api` -> `http://localhost:9090`）。如需直接指定后端地址，请在项目根目录创建 `.env`：
+
+```sh
+VITE_API_BASE_URL=http://localhost:9090
+```
+
+## 页面路由
+
+- `/login`
+- `/register`
+- `/reset`
+- `/home`
 
 ## Recommended IDE Setup
 
