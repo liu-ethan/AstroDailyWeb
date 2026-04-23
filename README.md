@@ -112,3 +112,23 @@ npm install
 npm run serve
 # H5 页面默认运行在 http://localhost:9091
 ```
+
+## 🐳 Docker 一键启动
+
+使用 Docker Compose 构建并启动前后端、MySQL、Redis：
+
+```bash
+docker compose up -d --build
+```
+
+- 前端访问地址: http://localhost:9091
+- 后端接口地址: http://localhost:9090
+- 配置文件: `backend/config/config.docker.yaml`
+
+如需启用邮件/大模型等能力，请在 `backend/config/config.docker.yaml` 中补充 SMTP 与 LLM 配置。
+
+```bash
+docker-compose build --build-arg GOPROXY=https://goproxy.cn,direct --no-cache backend
+docker-compose up -d
+docker exec -i astrodaily-mysql mysql -uroot astro_daily_web < create_db.sql
+```
