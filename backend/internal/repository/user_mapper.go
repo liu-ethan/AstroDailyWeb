@@ -3,16 +3,17 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 )
 
 type UserProfile struct {
-	UserID        int64
-	Birthday      string
-	Constellation string
-	Gender        string
-	City          string
-	Occupation    string
+	UserID        int64  `json:"user_id"`
+	Birthday      string `json:"birthday"`
+	Constellation string `json:"constellation"`
+	Gender        string `json:"gender"`
+	City          string `json:"city"`
+	Occupation    string `json:"occupation"`
 }
 
 type UserMapper interface {
@@ -74,14 +75,19 @@ func (m *userMapper) GetProfile(ctx context.Context, userID int64) (UserProfile,
 	const query = `SELECT user_id, birthday, constellation, gender, city, occupation FROM user_profiles WHERE user_id = ? LIMIT 1`
 	var profile UserProfile
 	var birthday time.Time
-	if err := m.db.QueryRowContext(ctx, query, userID).Scan(
+	err := m.db.QueryRowContext(ctx, query, userID).Scan(
 		&profile.UserID,
 		&birthday,
 		&profile.Constellation,
 		&profile.Gender,
 		&profile.City,
 		&profile.Occupation,
-	); err != nil {
+	)
+	if err != nil {
+		// 查不到记录时返回空 profile，不视为错误
+		if errors.Is(err, sql.ErrNoRows) {
+			return UserProfile{}, nil
+		}
 		return UserProfile{}, err
 	}
 	profile.Birthday = birthday.Format("2006-01-02")

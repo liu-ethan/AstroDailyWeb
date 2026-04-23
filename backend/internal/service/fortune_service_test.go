@@ -107,6 +107,13 @@ func (c *fakeSMTPClient) Send(ctx context.Context, to []string, subject, body st
 	return nil
 }
 
+func (c *fakeSMTPClient) SendVerifyCode(ctx context.Context, to []string, code string) error {
+	_ = ctx
+	_ = to
+	_ = code
+	return nil
+}
+
 func TestFortuneServiceGetTodayFromCache(t *testing.T) {
 	svc := NewFortuneService(
 		&fakeFortuneMapper{content: "cached", getErr: nil},

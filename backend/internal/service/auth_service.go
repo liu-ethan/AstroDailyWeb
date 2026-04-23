@@ -18,6 +18,7 @@ type AuthService interface {
 	Register(ctx context.Context, email, password, code string) error
 	Login(ctx context.Context, email, password string) (string, int64, error)
 	ResetPassword(ctx context.Context, email, newPassword, code string) error
+	Logout(ctx context.Context, token string) error
 }
 
 type authService struct {
@@ -48,7 +49,7 @@ func (s *authService) SendCode(ctx context.Context, email string, businessType i
 	if err := s.mapper.SaveVerificationCode(ctx, email, code, businessType); err != nil {
 		return err
 	}
-	return s.smtp.Send(ctx, []string{email}, "验证码", "您的验证码是: "+code)
+	return s.smtp.SendVerifyCode(ctx, []string{email}, code)
 }
 
 // Register 处理注册逻辑。
@@ -102,7 +103,13 @@ func (s *authService) Login(ctx context.Context, email, password string) (string
 	return token, int64(time.Until(exp).Seconds()), nil
 }
 
-// ResetPassword 处理重置密码逻辑。
+// Logout 使指定 token 失效。
+// 参数：ctx - 上下文；token - JWT 字符串。
+// 返回：error - 删除失败错误。
+func (s *authService) Logout(ctx context.Context, token string) error {
+	return s.tokenStore.Delete(ctx, token)
+}
+
 // 参数：ctx - 上下文；email - 用户邮箱；newPassword - 新密码；code - 验证码。
 // 返回：error - 处理失败错误。
 func (s *authService) ResetPassword(ctx context.Context, email, newPassword, code string) error {

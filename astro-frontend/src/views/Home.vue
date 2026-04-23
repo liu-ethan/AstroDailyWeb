@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { api, ApiError } from '../api/api'
 import { useAuth } from '../composables/useAuth'
 import { useToast } from '../composables/useToast'
 
-const { subscribed, setSubscribed } = useAuth()
+const { subscribed, setSubscribed, clearToken } = useAuth()
 const { showToast } = useToast()
+const router = useRouter()
 
 const profile = reactive({
   birthday: '',
@@ -38,6 +40,7 @@ const isProfileComplete = () => {
 const loadProfile = async () => {
   profileLoading.value = true
   try {
+    // 从服务端获取资料，有数据则回填，无数据则置空引导用户填写
     const data = await api.get<typeof profile>('/api/v1/user/profile')
     Object.assign(profile, data)
     profileHint.value = !isProfileComplete()
@@ -102,6 +105,21 @@ const toggleSubscribe = async () => {
   }
 }
 
+const logoutLoading = ref(false)
+
+const logout = async () => {
+  if (logoutLoading.value) return
+  logoutLoading.value = true
+  try {
+    await api.post('/api/v1/auth/logout')
+  } catch {
+    // 接口失败也强制退出
+  } finally {
+    clearToken()
+    router.replace('/login')
+  }
+}
+
 onMounted(() => {
   loadProfile()
 })
@@ -110,7 +128,10 @@ onMounted(() => {
 <template>
   <div class="page is-gray">
     <div class="page-inner">
-      <div class="page-title">每日运势</div>
+      <div class="page-header">
+        <div class="page-title">每日运势</div>
+        <button class="logout-btn" type="button" :disabled="logoutLoading" @click="logout">退出登录</button>
+      </div>
 
       <div class="card">
         <div class="section-title">个人资料</div>

@@ -91,7 +91,26 @@ func (ctl *AuthController) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, response.SuccessMessage("登录成功", gin.H{"token": token, "expires_in": expiresIn}))
 }
 
-// ResetPassword 处理重置密码请求。
+// Logout 处理退出登录请求，使当前 token 失效。
+// 参数：c - Gin 请求上下文。
+// 返回：无。
+func (ctl *AuthController) Logout(c *gin.Context) {
+	authHeader := c.GetHeader("Authorization")
+	token := ""
+	if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+		token = authHeader[7:]
+	}
+	if token == "" {
+		c.JSON(http.StatusBadRequest, response.Fail(4000, "缺少 token"))
+		return
+	}
+	if err := ctl.svc.Logout(c.Request.Context(), token); err != nil {
+		_ = c.Error(err)
+		return
+	}
+	c.JSON(http.StatusOK, response.SuccessMessage("退出成功", nil))
+}
+
 // 参数：c - Gin 请求上下文。
 // 返回：无。
 func (ctl *AuthController) ResetPassword(c *gin.Context) {

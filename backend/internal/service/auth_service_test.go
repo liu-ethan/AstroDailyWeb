@@ -72,6 +72,13 @@ func (f *fakeSMTP) Send(ctx context.Context, to []string, subject, body string) 
 	return nil
 }
 
+func (f *fakeSMTP) SendVerifyCode(ctx context.Context, to []string, code string) error {
+	_ = ctx
+	_ = to
+	_ = code
+	return nil
+}
+
 type fakeTokenStore struct {
 	savedToken string
 	expireAt   time.Time

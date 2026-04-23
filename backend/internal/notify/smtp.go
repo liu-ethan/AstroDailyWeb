@@ -15,6 +15,7 @@ import (
 
 type SMTPClient interface {
 	Send(ctx context.Context, to []string, subject, body string) error
+	SendVerifyCode(ctx context.Context, to []string, code string) error
 }
 
 type Client struct {
@@ -31,6 +32,7 @@ type mailTemplate struct {
 }
 
 const defaultTemplatePath = "internal/notify/mail.yaml"
+const verifyCodeTemplatePath = "internal/notify/verify_code.yaml"
 
 // NewClient 创建 SMTP 客户端。
 // 参数：host - SMTP 主机；port - SMTP 端口；user - 用户名；pass - 密码或授权码；from - 发件人邮箱。
@@ -144,4 +146,64 @@ func buildMessage(from string, to []string, subject, body string) string {
 		"Content-Type: text/plain; charset=UTF-8",
 	}
 	return strings.Join(headers, "\r\n") + "\r\n\r\n" + body
+}
+
+// SendVerifyCode 使用验证码专用模板发送邮件。
+// 参数：ctx - 上下文；to - 收件人列表；code - 验证码字符串。
+// 返回：error - 发送失败时返回错误。
+func (c *Client) SendVerifyCode(ctx context.Context, to []string, code string) error {
+	if len(to) == 0 {
+		return fmt.Errorf("empty receiver list")
+	}
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	tpl, err := loadMailTemplate(verifyCodeTemplatePath)
+	if err != nil {
+		return err
+	}
+	date := time.Now().Format("2006-01-02")
+	name := receiverName(to[0])
+	renderedSubject := renderTemplate(tpl.Subject, name, date, code)
+	renderedBody := renderTemplate(tpl.Content, name, date, code)
+
+	addr := fmt.Sprintf("%s:%d", c.host, c.port)
+	auth := smtp.PlainAuth("", c.user, c.pass, c.host)
+	msg := buildMessage(c.from, to, renderedSubject, renderedBody)
+
+	dialer := &tls.Dialer{NetDialer: &net.Dialer{Timeout: 5 * time.Second}}
+	conn, err := dialer.DialContext(ctx, "tcp", addr)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = conn.Close() }()
+
+	client, err := smtp.NewClient(conn, c.host)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = client.Quit() }()
+
+	if err = client.Auth(auth); err != nil {
+		return err
+	}
+	if err = client.Mail(c.from); err != nil {
+		return err
+	}
+	for _, receiver := range to {
+		if err = client.Rcpt(receiver); err != nil {
+			return err
+		}
+	}
+	w, err := client.Data()
+	if err != nil {
+		return err
+	}
+	if _, err = w.Write([]byte(msg)); err != nil {
+		return err
+	}
+	return w.Close()
 }

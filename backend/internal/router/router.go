@@ -35,6 +35,7 @@ func NewEngine(mws []gin.HandlerFunc, ctrls Controllers, authMW gin.HandlerFunc)
 
 		secured := v1.Group("")
 		secured.Use(authMW)
+		secured.POST("/auth/logout", ctrls.Auth.Logout)
 		secured.GET("/fortune/today", ctrls.Fortune.Today)
 		secured.GET("/user/profile", ctrls.User.GetProfile)
 		secured.PUT("/user/profile", ctrls.User.SaveProfile)
