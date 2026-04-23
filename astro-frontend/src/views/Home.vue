@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { api, ApiError } from '../api/api'
 import { useAuth } from '../composables/useAuth'
@@ -24,6 +24,9 @@ const profileHint = ref(false)
 const fortune = ref('')
 const fortuneDate = ref('')
 const fortuneLoading = ref(false)
+
+// 将 LLM 返回的换行符转为 <br>，用于 HTML 渲染
+const fortuneHtml = computed(() => fortune.value.replace(/\n/g, '<br>'))
 
 const subscribeLoading = ref(false)
 
@@ -162,7 +165,7 @@ onMounted(() => {
         <div class="section-title">今日运势</div>
         <div v-if="fortune" style="line-height: 1.6">
           <div class="badge" style="margin-bottom: 12px">{{ fortuneDate }}</div>
-          <div>{{ fortune }}</div>
+          <div v-html="fortuneHtml"></div>
         </div>
         <div v-else style="color: #999999">
           <p style="margin-bottom: 12px">今天还没有生成运势，点击下方按钮获取</p>

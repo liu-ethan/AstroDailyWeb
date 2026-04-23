@@ -9,7 +9,8 @@ import (
 )
 
 type PromptTemplate struct {
-	UserPrompt string `yaml:"user_prompt"`
+	SystemPrompt string `yaml:"system_prompt"`
+	UserPrompt   string `yaml:"user_prompt"`
 }
 
 // LoadPromptTemplate 从 YAML 文件加载 Prompt 模板。

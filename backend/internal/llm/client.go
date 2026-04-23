@@ -80,7 +80,7 @@ func (c *OpenAICompatibleClient) GenerateTodayFortune(ctx context.Context, profi
 	payload := map[string]interface{}{
 		"model": c.model,
 		"messages": []map[string]string{
-			{"role": "system", "content": "你是严谨的今日运势分析助手，请按用户要求格式输出。"},
+			{"role": "system", "content": tpl.SystemPrompt},
 			{"role": "user", "content": userPrompt},
 		},
 	}

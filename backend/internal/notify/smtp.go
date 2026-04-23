@@ -61,12 +61,14 @@ func (c *Client) Send(ctx context.Context, to []string, subject, body string) er
 	}
 	date := time.Now().Format("2006-01-02")
 	name := receiverName(to[0])
-	renderedSubject := renderTemplate(tpl.Subject, name, date, body)
-	renderedBody := renderTemplate(tpl.Content, name, date, body)
+	// 将 LLM 输出的换行符转为 HTML <br>，邮件以 HTML 格式发送
+	htmlBody := strings.ReplaceAll(body, "\n", "<br>")
+	renderedSubject := renderTemplate(tpl.Subject, name, date, htmlBody)
+	renderedBody := renderTemplate(tpl.Content, name, date, htmlBody)
 
 	addr := fmt.Sprintf("%s:%d", c.host, c.port)
 	auth := smtp.PlainAuth("", c.user, c.pass, c.host)
-	msg := buildMessage(c.from, to, renderedSubject, renderedBody)
+	msg := buildHTMLMessage(c.from, to, renderedSubject, renderedBody)
 
 	// 163 邮箱常用 465 SSL 端口，这里使用 TLS 直连发送。
 	dialer := &tls.Dialer{NetDialer: &net.Dialer{Timeout: 5 * time.Second}}
@@ -144,6 +146,17 @@ func buildMessage(from string, to []string, subject, body string) string {
 		"Subject: " + subject,
 		"MIME-Version: 1.0",
 		"Content-Type: text/plain; charset=UTF-8",
+	}
+	return strings.Join(headers, "\r\n") + "\r\n\r\n" + body
+}
+
+func buildHTMLMessage(from string, to []string, subject, body string) string {
+	headers := []string{
+		"From: " + from,
+		"To: " + strings.Join(to, ";"),
+		"Subject: " + subject,
+		"MIME-Version: 1.0",
+		"Content-Type: text/html; charset=UTF-8",
 	}
 	return strings.Join(headers, "\r\n") + "\r\n\r\n" + body
 }
