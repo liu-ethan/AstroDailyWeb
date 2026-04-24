@@ -1,0 +1,45 @@
+app:
+  name: astrodaily-backend
+  env: docker
+  host: 0.0.0.0
+  port: "9090"
+  log_level: info
+  read_timeout: 10s
+  write_timeout: 15s
+  idle_timeout: 60s
+  enable_cron: false
+
+db:
+  host: mysql
+  port: "3306"
+  user: root
+  password: ""
+  name: astro_daily_web
+  max_open_conns: 20
+  max_idle_conns: 10
+  conn_max_lifetime: 30m
+
+redis:
+  addr: redis:6379
+  password: ""
+  db: 2
+  key_prefix: "astro:jwt:"
+
+jwt:
+  secret: change-me
+  issuer: astrodaily-backend
+  expire_minutes: 30
+
+smtp:
+  host: smtp.163.com
+  port: 465
+  user:
+  pass:
+  from:
+
+llm:
+  api_key:
+  base_url:
+  model: gpt-4o-mini
+  timeout: 30s
+
