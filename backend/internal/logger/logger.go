@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"io"
 	"log/slog"
 	"os"
 )
@@ -21,6 +22,13 @@ func New(level string) *slog.Logger {
 		lv = slog.LevelInfo
 	}
 
-	h := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: lv})
+	_ = os.MkdirAll("log", 0o755)
+	file, err := os.OpenFile("log/app.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
+	var out io.Writer = os.Stdout
+	if err == nil {
+		out = io.MultiWriter(os.Stdout, file)
+	}
+
+	h := slog.NewJSONHandler(out, &slog.HandlerOptions{Level: lv})
 	return slog.New(h)
 }

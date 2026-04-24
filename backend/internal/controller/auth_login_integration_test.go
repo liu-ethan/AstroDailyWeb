@@ -73,6 +73,13 @@ func (s *loginSMTPStub) Send(ctx context.Context, to []string, subject, body str
 	return nil
 }
 
+func (s *loginSMTPStub) SendVerifyCode(ctx context.Context, to []string, code string) error {
+	_ = ctx
+	_ = to
+	_ = code
+	return nil
+}
+
 type loginTokenStoreStub struct {
 	saveErr       error
 	saveCallCount int
@@ -131,7 +138,7 @@ func TestAuthLoginSuccess(t *testing.T) {
 	}
 
 	var resp struct {
-		Code    int `json:"code"`
+		Code    int    `json:"code"`
 		Message string `json:"message"`
 		Data    struct {
 			Token     string `json:"token"`
@@ -272,4 +279,3 @@ func TestAuthLoginSaveTokenError(t *testing.T) {
 		t.Fatalf("unexpected response: %+v", resp)
 	}
 }
-

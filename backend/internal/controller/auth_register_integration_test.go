@@ -84,6 +84,13 @@ func (s *registerSMTPStub) Send(ctx context.Context, to []string, subject, body 
 	return nil
 }
 
+func (s *registerSMTPStub) SendVerifyCode(ctx context.Context, to []string, code string) error {
+	_ = ctx
+	_ = to
+	_ = code
+	return nil
+}
+
 func buildRegisterTestEngine(mapper *registerMapperStub) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	authSvc := service.NewAuthService(

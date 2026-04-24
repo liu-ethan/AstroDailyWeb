@@ -80,6 +80,15 @@ func (s *sendCodeSMTPStub) Send(ctx context.Context, to []string, subject, body 
 	return s.sendErr
 }
 
+func (s *sendCodeSMTPStub) SendVerifyCode(ctx context.Context, to []string, code string) error {
+	_ = ctx
+	s.sendCallCount++
+	s.sentTo = append([]string{}, to...)
+	s.sentSubject = ""
+	s.sentBody = code
+	return s.sendErr
+}
+
 type sendCodeTokenStoreStub struct{}
 
 func (s *sendCodeTokenStoreStub) Save(ctx context.Context, token string, expireAt time.Time) error {
