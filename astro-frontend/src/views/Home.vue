@@ -94,6 +94,11 @@ const toggleSubscribe = async () => {
   if (subscribeLoading.value) {
     return
   }
+  if (!subscribed.value && !isProfileComplete()) {
+    showToast('请先完善资料后再订阅')
+    profileHint.value = true
+    return
+  }
   subscribeLoading.value = true
   try {
     if (subscribed.value) {

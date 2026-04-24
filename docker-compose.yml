@@ -1,56 +1,27 @@
 version: "3.9"
 
 services:
-  mysql:
-    image: mysql:8.4
-    container_name: astrodaily-mysql
-    environment:
-      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
-      MYSQL_DATABASE: astro_daily_web
-    volumes:
-      - mysql_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-
-  redis:
-    image: redis:7-alpine
-    container_name: astrodaily-redis
-    volumes:
-      - redis_data:/data
-
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
     container_name: astrodaily-backend
     environment:
-      CONFIG_PATH: /app/config/config.yaml
+      - CONFIG_PATH=/app/config/config.yaml
+      - TZ=Asia/Shanghai
     ports:
       - "9090:9090"
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    restart: unless-stopped
     volumes:
-      - ./backend/config/config.docker.yaml:/app/config/config.yaml:ro
+      - ./backend/config/config.yaml:/app/config/config.yaml:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
 
   frontend:
     build:
       context: ./astro-frontend
-      dockerfile: Dockerfile
-      args:
-        VITE_API_BASE_URL: http://localhost:9090
     container_name: astrodaily-frontend
     ports:
       - "9091:80"
     depends_on:
       - backend
-
-volumes:
-  mysql_data:
-  redis_data:
+    restart: unless-stopped

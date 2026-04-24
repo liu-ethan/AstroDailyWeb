@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"strings"
 
+	"astrodailyweb/backend/internal/apperror"
 	"astrodailyweb/backend/internal/repository"
 )
 
@@ -29,6 +31,13 @@ func NewUserService(mapper repository.UserMapper) UserService {
 // 参数：ctx - 上下文；userID - 用户ID。
 // 返回：error - 更新失败错误。
 func (s *userService) Subscribe(ctx context.Context, userID int64) error {
+	profile, err := s.mapper.GetProfile(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if !isProfileComplete(profile) {
+		return apperror.New(4003, "请先完善运势资料")
+	}
 	return s.mapper.UpdateSubscription(ctx, userID, true)
 }
 
@@ -58,4 +67,12 @@ func (s *userService) GetProfile(ctx context.Context, userID int64) (repository.
 // 返回：error - 保存失败错误。
 func (s *userService) SaveProfile(ctx context.Context, profile repository.UserProfile) error {
 	return s.mapper.UpsertProfile(ctx, profile)
+}
+
+func isProfileComplete(profile repository.UserProfile) bool {
+	return strings.TrimSpace(profile.Birthday) != "" &&
+		strings.TrimSpace(profile.Constellation) != "" &&
+		strings.TrimSpace(profile.Gender) != "" &&
+		strings.TrimSpace(profile.City) != "" &&
+		strings.TrimSpace(profile.Occupation) != ""
 }

@@ -1,22 +1,28 @@
 FROM golang:1.25-alpine AS builder
-WORKDIR /app
 
-ARG GOPROXY=https://proxy.golang.org,direct
+WORKDIR /src
+
+ARG GOPROXY=https://goproxy.cn,direct
 ENV GOPROXY=${GOPROXY}
 
 COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o server ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/server ./cmd/server
 
 FROM alpine:3.20
+
 WORKDIR /app
 
-COPY --from=builder /app/server /app/server
-COPY --from=builder /app/config /app/config
+RUN apk add --no-cache tzdata
+ENV TZ=Asia/Shanghai
 
-ENV CONFIG_PATH=/app/config/config.yaml
+COPY --from=builder /out/server /app/server
+COPY config /app/config
+COPY internal/notify /app/internal/notify
+COPY internal/llm/prompt_template.yaml /app/internal/llm/prompt_template.yaml
 
 EXPOSE 9090
-CMD ["/app/server"]
+
+ENTRYPOINT ["/app/server"]

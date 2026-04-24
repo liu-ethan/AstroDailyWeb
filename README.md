@@ -128,7 +128,13 @@ docker compose up -d --build
 如需启用邮件/大模型等能力，请在 `backend/config/config.docker.yaml` 中补充 SMTP 与 LLM 配置。
 
 ```bash
-docker-compose build --build-arg GOPROXY=https://goproxy.cn,direct --no-cache backend
+docker-compose build --build-arg GOPROXY=https://goproxy.cn,direct backend
 docker-compose up -d
 docker exec -i astrodaily-mysql mysql -uroot astro_daily_web < create_db.sql
+
+
+docker-compose down --remove-orphans
+docker rm -f astrodaily-frontend astrodaily-backend
+docker image prune -f
+docker-compose up -d --build
 ```
