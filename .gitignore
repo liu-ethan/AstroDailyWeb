@@ -1,5 +1,5 @@
 .idea
 backend/config/config.yaml
 backend/config/config.docker.yaml
-backend/log
+backend/log/*
 .codebuddy/*
