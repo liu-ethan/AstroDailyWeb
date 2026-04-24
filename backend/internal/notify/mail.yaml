@@ -1,9 +1,0 @@
-subject: "今日运势已送达 | {date} 专属解读"
-content: |
-  <html><body style="font-family:sans-serif;color:#333;line-height:1.8;">
-  <p>你好，{name}，</p>
-  <p>今天是 {date}，你的专属今日运势如下：</p>
-  <p>{content}</p>
-  <hr style="border:none;border-top:1px solid #eee;margin:16px 0;">
-  <p style="color:#999;font-size:12px;">感谢你订阅每日运势服务，明天同一时间为你更新。</p>
-  </body></html>
