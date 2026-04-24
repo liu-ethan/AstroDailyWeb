@@ -10,6 +10,8 @@ type FortuneMapper interface {
 	GetByUserAndDate(ctx context.Context, userID int64, date time.Time) (string, error)
 	Save(ctx context.Context, userID int64, date time.Time, content string) error
 	CleanupBefore(ctx context.Context, cutoffDate time.Time) error
+	DeleteByDate(ctx context.Context, date time.Time) error
+	DeleteExceptDate(ctx context.Context, date time.Time) error
 }
 
 type fortuneMapper struct {
@@ -54,5 +56,23 @@ ON DUPLICATE KEY UPDATE content = VALUES(content)`
 func (m *fortuneMapper) CleanupBefore(ctx context.Context, cutoffDate time.Time) error {
 	const stmt = `DELETE FROM fortunes WHERE target_date < ?`
 	_, err := m.db.ExecContext(ctx, stmt, cutoffDate.Format("2006-01-02"))
+	return err
+}
+
+// DeleteByDate 删除指定日期的数据。
+// 参数：ctx - 上下文；date - 目标日期。
+// 返回：error - 删除失败错误。
+func (m *fortuneMapper) DeleteByDate(ctx context.Context, date time.Time) error {
+	const stmt = `DELETE FROM fortunes WHERE target_date = ?`
+	_, err := m.db.ExecContext(ctx, stmt, date.Format("2006-01-02"))
+	return err
+}
+
+// DeleteExceptDate 删除除指定日期外的所有数据。
+// 参数：ctx - 上下文；date - 保留日期。
+// 返回：error - 删除失败错误。
+func (m *fortuneMapper) DeleteExceptDate(ctx context.Context, date time.Time) error {
+	const stmt = `DELETE FROM fortunes WHERE target_date <> ?`
+	_, err := m.db.ExecContext(ctx, stmt, date.Format("2006-01-02"))
 	return err
 }

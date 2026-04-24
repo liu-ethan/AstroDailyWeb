@@ -79,7 +79,7 @@ func Build(cfg config.Config, log *slog.Logger) (*App, error) {
 
 	engine := router.NewEngine(mws, ctrls, middleware.JWTAuth(jwtMgr, tokenStore))
 
-	s := scheduler.New(log, userSvc, fortuneSvc)
+	s := scheduler.New(log, userSvc, fortuneSvc, authSvc)
 	if err = s.RegisterJobs(); err != nil {
 		return nil, fmt.Errorf("register cron jobs failed: %w", err)
 	}

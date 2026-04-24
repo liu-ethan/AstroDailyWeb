@@ -23,6 +23,11 @@ type fakeAuthMapper struct {
 	createdPassword string
 }
 
+// CleanupVerificationCodesBefore implements [repository.AuthMapper].
+func (m *fakeAuthMapper) CleanupVerificationCodesBefore(ctx context.Context, cutoff time.Time) error {
+	panic("unimplemented")
+}
+
 func (m *fakeAuthMapper) FindUserByEmail(ctx context.Context, email string) (repository.UserRecord, error) {
 	_ = ctx
 	_ = email

@@ -26,6 +26,11 @@ type sendCodeMapperStub struct {
 	saveCallCount int
 }
 
+// CleanupVerificationCodesBefore implements [repository.AuthMapper].
+func (m *sendCodeMapperStub) CleanupVerificationCodesBefore(ctx context.Context, cutoff time.Time) error {
+	panic("unimplemented")
+}
+
 func (m *sendCodeMapperStub) FindUserByEmail(ctx context.Context, email string) (repository.UserRecord, error) {
 	_ = ctx
 	_ = email

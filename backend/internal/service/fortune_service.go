@@ -18,6 +18,8 @@ type FortuneService interface {
 	GetToday(ctx context.Context, userID int64) (date string, content string, err error)
 	GenerateForSubscribedUsers(ctx context.Context, users []repository.UserRecord) error
 	CleanupHistory(ctx context.Context, keepDays int) error
+	CleanupYesterday(ctx context.Context) error
+	CleanupExceptToday(ctx context.Context) error
 }
 
 type fortuneService struct {
@@ -121,4 +123,19 @@ func (s *fortuneService) GenerateForSubscribedUsers(ctx context.Context, users [
 func (s *fortuneService) CleanupHistory(ctx context.Context, keepDays int) error {
 	cutoff := time.Now().AddDate(0, 0, -keepDays)
 	return s.mapper.CleanupBefore(ctx, cutoff)
+}
+
+// CleanupYesterday 删除昨天的运势数据。
+// 参数：ctx - 上下文。
+// 返回：error - 清理失败错误。
+func (s *fortuneService) CleanupYesterday(ctx context.Context) error {
+	yesterday := time.Now().AddDate(0, 0, -1)
+	return s.mapper.DeleteByDate(ctx, yesterday)
+}
+
+// CleanupExceptToday 删除除今天外的运势数据。
+// 参数：ctx - 上下文。
+// 返回：error - 清理失败错误。
+func (s *fortuneService) CleanupExceptToday(ctx context.Context) error {
+	return s.mapper.DeleteExceptDate(ctx, time.Now())
 }

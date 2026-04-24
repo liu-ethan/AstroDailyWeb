@@ -19,6 +19,7 @@ type AuthService interface {
 	Login(ctx context.Context, email, password string) (string, int64, error)
 	ResetPassword(ctx context.Context, email, newPassword, code string) error
 	Logout(ctx context.Context, token string) error
+	CleanupVerificationCodesExceptToday(ctx context.Context) error
 }
 
 type authService struct {
@@ -136,4 +137,13 @@ func (s *authService) ResetPassword(ctx context.Context, email, newPassword, cod
 		return apperror.Wrap(5000, "重置密码失败", err)
 	}
 	return nil
+}
+
+// CleanupVerificationCodesExceptToday 删除除今天外的验证码记录。
+// 参数：ctx - 上下文。
+// 返回：error - 清理失败错误。
+func (s *authService) CleanupVerificationCodesExceptToday(ctx context.Context) error {
+	now := time.Now()
+	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	return s.mapper.CleanupVerificationCodesBefore(ctx, todayStart)
 }

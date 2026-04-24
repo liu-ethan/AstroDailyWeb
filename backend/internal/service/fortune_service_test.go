@@ -20,6 +20,16 @@ type fakeFortuneMapper struct {
 	cleanupErr error
 }
 
+// DeleteExceptDate implements [repository.FortuneMapper].
+func (m *fakeFortuneMapper) DeleteExceptDate(ctx context.Context, date time.Time) error {
+	panic("unimplemented")
+}
+
+// DeleteByDate implements [repository.FortuneMapper].
+func (m *fakeFortuneMapper) DeleteByDate(ctx context.Context, date time.Time) error {
+	panic("unimplemented")
+}
+
 func (m *fakeFortuneMapper) GetByUserAndDate(ctx context.Context, userID int64, date time.Time) (string, error) {
 	_ = ctx
 	_ = userID

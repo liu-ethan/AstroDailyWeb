@@ -24,6 +24,11 @@ type loginMapperStub struct {
 	findErr    error
 }
 
+// CleanupVerificationCodesBefore implements [repository.AuthMapper].
+func (m *loginMapperStub) CleanupVerificationCodesBefore(ctx context.Context, cutoff time.Time) error {
+	panic("unimplemented")
+}
+
 func (m *loginMapperStub) FindUserByEmail(ctx context.Context, email string) (repository.UserRecord, error) {
 	_ = ctx
 	_ = email

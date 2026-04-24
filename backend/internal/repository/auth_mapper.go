@@ -12,6 +12,7 @@ type AuthMapper interface {
 	SaveVerificationCode(ctx context.Context, email, code string, businessType int) error
 	VerifyCode(ctx context.Context, email, code string, businessType int) (bool, error)
 	UpdatePassword(ctx context.Context, email, newPassword string) error
+	CleanupVerificationCodesBefore(ctx context.Context, cutoff time.Time) error
 }
 
 type UserRecord struct {
@@ -101,4 +102,13 @@ func (m *authMapper) UpdatePassword(ctx context.Context, email, newPassword stri
 		return sql.ErrNoRows
 	}
 	return nil
+}
+
+// CleanupVerificationCodesBefore 删除指定时间之前的验证码记录。
+// 参数：ctx - 上下文；cutoff - 截止时间。
+// 返回：error - 删除失败错误。
+func (m *authMapper) CleanupVerificationCodesBefore(ctx context.Context, cutoff time.Time) error {
+	const stmt = `DELETE FROM verification_codes WHERE created_at < ?`
+	_, err := m.db.ExecContext(ctx, stmt, cutoff)
+	return err
 }
