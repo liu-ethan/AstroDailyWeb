@@ -1,5 +1,7 @@
 .idea
 backend/config/config.yaml
-backend/config/config.docker.yaml
+backend/config/config_docker.yaml
+backend/config/config_test.yaml
 backend/log/*
 .codebuddy/*
+**/.vscode
