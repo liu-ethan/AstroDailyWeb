@@ -16,7 +16,7 @@ import (
 )
 
 // TODO: change to your target email
-var targetEmail = "2361352642@qq.com"
+var targetEmail = ""
 
 func main() {
 	cfgPath := os.Getenv("CONFIG_PATH")
