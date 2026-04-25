@@ -83,6 +83,7 @@ func (c *OpenAICompatibleClient) GenerateTodayFortune(ctx context.Context, profi
 			{"role": "system", "content": tpl.SystemPrompt},
 			{"role": "user", "content": userPrompt},
 		},
+		"temperature": 0.5,
 	}
 	buf, _ := json.Marshal(payload)
 

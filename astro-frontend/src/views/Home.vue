@@ -44,8 +44,13 @@ const loadProfile = async () => {
   profileLoading.value = true
   try {
     // 从服务端获取资料，有数据则回填，无数据则置空引导用户填写
-    const data = await api.get<typeof profile>('/api/v1/user/profile')
+    const data = await api.get<
+      typeof profile & {
+        is_subscribed: boolean
+      }
+    >('/api/v1/user/profile')
     Object.assign(profile, data)
+    setSubscribed(Boolean(data.is_subscribed))
     profileHint.value = !isProfileComplete()
   } catch {
     profileHint.value = true

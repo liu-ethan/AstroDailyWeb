@@ -17,12 +17,12 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    port: 9091, // 正式地址
-    // port: 19091,  // 测试地址
+    // port: 9091, // 正式地址
+    port: 19091,  // 测试地址
     proxy: {
       '/api': {
-        target: 'http://localhost:9090', // 正式地址
-        // target: 'http://127.0.0.1:19090', // 测试地址
+        // target: 'http://localhost:9090', // 正式地址
+        target: 'http://127.0.0.1:19090', // 测试地址
         changeOrigin: true,
       },
     },

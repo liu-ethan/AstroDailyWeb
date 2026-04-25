@@ -9,6 +9,7 @@ import (
 
 type UserProfile struct {
 	UserID        int64  `json:"user_id"`
+	IsSubscribed  bool   `json:"is_subscribed"`
 	Birthday      string `json:"birthday"`
 	Constellation string `json:"constellation"`
 	Gender        string `json:"gender"`
@@ -72,25 +73,48 @@ func (m *userMapper) ListSubscribedUsers(ctx context.Context) ([]UserRecord, err
 // 参数：ctx - 上下文；userID - 用户ID。
 // 返回：UserProfile - 用户资料；error - 查询失败错误。
 func (m *userMapper) GetProfile(ctx context.Context, userID int64) (UserProfile, error) {
-	const query = `SELECT user_id, birthday, constellation, gender, city, occupation FROM user_profiles WHERE user_id = ? LIMIT 1`
+	const query = `
+SELECT u.id, u.is_subscribed, up.birthday, up.constellation, up.gender, up.city, up.occupation
+FROM users u
+LEFT JOIN user_profiles up ON u.id = up.user_id
+WHERE u.id = ?
+LIMIT 1`
 	var profile UserProfile
-	var birthday time.Time
+	var birthday sql.NullTime
+	var constellation sql.NullString
+	var gender sql.NullString
+	var city sql.NullString
+	var occupation sql.NullString
 	err := m.db.QueryRowContext(ctx, query, userID).Scan(
 		&profile.UserID,
+		&profile.IsSubscribed,
 		&birthday,
-		&profile.Constellation,
-		&profile.Gender,
-		&profile.City,
-		&profile.Occupation,
+		&constellation,
+		&gender,
+		&city,
+		&occupation,
 	)
 	if err != nil {
-		// 查不到记录时返回空 profile，不视为错误
 		if errors.Is(err, sql.ErrNoRows) {
 			return UserProfile{}, nil
 		}
 		return UserProfile{}, err
 	}
-	profile.Birthday = birthday.Format("2006-01-02")
+	if birthday.Valid {
+		profile.Birthday = birthday.Time.Format("2006-01-02")
+	}
+	if constellation.Valid {
+		profile.Constellation = constellation.String
+	}
+	if gender.Valid {
+		profile.Gender = gender.String
+	}
+	if city.Valid {
+		profile.City = city.String
+	}
+	if occupation.Valid {
+		profile.Occupation = occupation.String
+	}
 	return profile, nil
 }
 

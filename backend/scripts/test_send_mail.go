@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"astrodailyweb/backend/internal/config"
 	"astrodailyweb/backend/internal/db"
@@ -13,15 +15,8 @@ import (
 	"astrodailyweb/backend/internal/service"
 )
 
-type fakeLLM struct {
-	content string
-}
-
-func (f *fakeLLM) GenerateTodayFortune(ctx context.Context, profile llm.FortuneProfile) (string, error) {
-	_ = ctx
-	_ = profile
-	return f.content, nil
-}
+// TODO: change to your target email
+var targetEmail = "2361352642@qq.com"
 
 func main() {
 	cfgPath := os.Getenv("CONFIG_PATH")
@@ -41,28 +36,29 @@ func main() {
 
 	userMapper := repository.NewUserMapper(database)
 	fortuneMapper := repository.NewFortuneMapper(database)
+	authMapper := repository.NewAuthMapper(database)
 
+	provider := strings.TrimSpace(cfg.LLM.Provider)
+	if provider != "openai-compatible" && !(provider == "" && cfg.LLM.APIKey != "" && cfg.LLM.BaseURL != "") {
+		log.Fatal("LLM config missing: please set LLM provider/api_key/base_url")
+	}
+	llmClient := llm.NewOpenAICompatibleClient(cfg.LLM.APIKey, cfg.LLM.BaseURL, cfg.LLM.Model, cfg.LLM.Timeout)
 	smtpClient := notify.NewClient(cfg.SMTP.Host, cfg.SMTP.Port, cfg.SMTP.User, cfg.SMTP.Pass, cfg.SMTP.From)
-	fortuneSvc := service.NewFortuneService(
-		fortuneMapper,
-		userMapper,
-		&fakeLLM{content: "测试运势：一切顺利。"},
-		smtpClient,
-	)
-	userSvc := service.NewUserService(userMapper)
+	fortuneSvc := service.NewFortuneService(fortuneMapper, userMapper, llmClient, smtpClient)
 
 	ctx := context.Background()
-	users, err := userSvc.ListSubscribedUsers(ctx)
+	user, err := authMapper.FindUserByEmail(ctx, targetEmail)
 	if err != nil {
 		log.Fatal(err)
 	}
-	if len(users) == 0 {
-		log.Print("no subscribed users found")
-		return
-	}
 
-	if err := fortuneSvc.GenerateForSubscribedUsers(ctx, users); err != nil {
+	date, content, err := fortuneSvc.GetToday(ctx, user.ID)
+	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("sent to %d users", len(users))
+
+	if err := smtpClient.Send(ctx, []string{targetEmail}, "每日运势", fmt.Sprintf("%s\n\n%s", date, content)); err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("sent to %s", targetEmail)
 }
