@@ -13,6 +13,8 @@ const setToken = (value: string) => {
 const clearToken = () => {
   token.value = ''
   localStorage.removeItem('token')
+  subscribed.value = false
+  localStorage.removeItem('subscribed')
 }
 
 const setSubscribed = (value: boolean) => {
