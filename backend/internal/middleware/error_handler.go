@@ -21,13 +21,36 @@ func ErrorHandler() gin.HandlerFunc {
 		}
 
 		err := c.Errors.Last().Err
+		requestID := c.GetString(RequestIDKey)
+		path := c.Request.URL.Path
+		method := c.Request.Method
 		var appErr *apperror.AppError
 		if errors.As(err, &appErr) {
-			slog.Error("request failed", "code", appErr.Code, "msg", appErr.Message, "err", appErr.Err)
-			c.JSON(response.HTTPStatusFromBizCode(appErr.Code), response.Fail(appErr.Code, appErr.Message))
+			status := response.HTTPStatusFromBizCode(appErr.Code)
+			slog.Error(
+				"request failed",
+				"request_id", requestID,
+				"method", method,
+				"path", path,
+				"status", status,
+				"code", appErr.Code,
+				"msg", appErr.Message,
+				"err", appErr.Err,
+			)
+			c.JSON(status, response.Fail(appErr.Code, appErr.Message))
 			return
 		}
-		slog.Error("request failed", "err", err)
-		c.JSON(response.HTTPStatusFromBizCode(5000), response.Fail(5000, "系统繁忙，请稍后重试"))
+		status := response.HTTPStatusFromBizCode(5000)
+		slog.Error(
+			"request failed",
+			"request_id", requestID,
+			"method", method,
+			"path", path,
+			"status", status,
+			"code", 5000,
+			"msg", err.Error(),
+			"err", err,
+		)
+		c.JSON(status, response.Fail(5000, "系统繁忙，请稍后重试"))
 	}
 }

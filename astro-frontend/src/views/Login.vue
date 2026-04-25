@@ -10,6 +10,8 @@ const route = useRoute()
 const { setToken } = useAuth()
 const { showToast } = useToast()
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 const form = reactive({
   email: '',
   password: '',
@@ -20,6 +22,10 @@ const submitting = ref(false)
 const submit = async () => {
   if (!form.email || !form.password) {
     showToast('请输入邮箱和密码')
+    return
+  }
+  if (!emailPattern.test(form.email)) {
+    showToast('邮箱格式不正确')
     return
   }
   submitting.value = true

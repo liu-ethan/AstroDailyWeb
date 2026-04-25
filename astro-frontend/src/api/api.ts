@@ -45,15 +45,24 @@ const request = async <T>(path: string, options: RequestInit = {}) => {
     throw new ApiError('网络异常，请稍后重试')
   }
 
-  if (!response.ok) {
-    showToast('服务暂时不可用')
-    throw new ApiError('服务暂时不可用')
-  }
-
-  let payload: ApiResponse<T>
+  let payload: ApiResponse<T> | null = null
   try {
     payload = (await response.json()) as ApiResponse<T>
   } catch (error) {
+    payload = null
+  }
+
+  if (!response.ok) {
+    const message = payload?.message || '服务暂时不可用'
+    showToast(message)
+    if (payload && (payload.code === 4010 || payload.code === 4011)) {
+      clearToken()
+      window.location.href = '/login'
+    }
+    throw new ApiError(message, payload?.code)
+  }
+
+  if (!payload) {
     showToast('服务响应异常')
     throw new ApiError('服务响应异常')
   }

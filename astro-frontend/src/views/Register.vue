@@ -7,6 +7,8 @@ import { useToast } from '../composables/useToast'
 const router = useRouter()
 const { showToast } = useToast()
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 const form = reactive({
   email: '',
   password: '',
@@ -36,6 +38,10 @@ const sendCode = async () => {
     showToast('请输入邮箱')
     return
   }
+  if (!emailPattern.test(form.email)) {
+    showToast('邮箱格式不正确')
+    return
+  }
   if (sending.value || countdown.value > 0) {
     return
   }
@@ -53,12 +59,16 @@ const sendCode = async () => {
 }
 
 const submit = async () => {
-  if (form.password.length < 8) {
-    showToast('密码不得少于8位')
-    return
-  }
   if (!form.email || !form.code) {
     showToast('请完整填写信息')
+    return
+  }
+  if (!emailPattern.test(form.email)) {
+    showToast('邮箱格式不正确')
+    return
+  }
+  if (form.password.length < 8) {
+    showToast('密码不得少于8位')
     return
   }
   submitting.value = true
